@@ -17,6 +17,8 @@ export interface CommonErrorResponse {
   message: string;
 }
 
+export const SESSION_TTL = 60 * 60 * 24 * 7; // 1 week
+
 export function newNameSession(rdc: redis.RedisClient): middlewareFunction {
   return (req, res) => {
     const playerName = req.query.playerName;
@@ -25,7 +27,7 @@ export function newNameSession(rdc: redis.RedisClient): middlewareFunction {
       return;
     }
     const sessionID: string = uuidv4();
-    rdc.set(sessionID, playerName as string);
+    rdc.set(sessionID, playerName as string, "EX", SESSION_TTL);
     const ret: NameSession = {
       sessionID: sessionID,
       playerName: playerName as string,
