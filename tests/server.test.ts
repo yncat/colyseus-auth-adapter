@@ -1,12 +1,13 @@
 import * as express from "express";
 import * as redis from "redis-mock";
 import * as request from "supertest";
-import { newNameSession } from "../index";
+import { newNameSession, checkoutNameSession } from "../index";
 
 const rdc = redis.createClient();
 
 const app = express();
 app.get("/api/new_name_session", newNameSession(rdc));
+app.get("/api/checkout_name_session", checkoutNameSession(rdc));
 const server = app.listen(3001);
 
 describe("newNameSession", () => {
@@ -17,6 +18,7 @@ describe("newNameSession", () => {
     expect(response.status).toBe(200);
     expect(/.+-.+-.+-.+/.test(response.body.sessionID)).toBe(true);
     expect(response.body.playerName).toBe("cat");
+    expect(response.body.isLoggingIn).toBe(false);
   });
   it("returns error when playerName is empty", async () => {
     const response = await request(app).get(
@@ -29,6 +31,52 @@ describe("newNameSession", () => {
     const response = await request(app).get("/api/new_name_session");
     expect(response.status).toBe(400);
     expect(response.body.message).toBe("playerName is required");
+  });
+});
+
+describe("checkoutNameSession", () => {
+  beforeAll((done) => {
+    rdc.mset(
+      "logged_out_session",
+      JSON.stringify({ playerName: "cat", isLoggingIn: false }),
+      "logged_in_session",
+      JSON.stringify({ playerName: "cat", isLoggingIn: true }),
+      (err, res) => {
+        done();
+      }
+    );
+  });
+
+  it("returns name session info when an existing session ID is given", async () => {
+    const response = await request(app).get(
+      "/api/checkout_name_session?sessionID=logged_out_session"
+    );
+    expect(response.status).toBe(200);
+    expect(response.body.sessionID).toBe("logged_out_session");
+    expect(response.body.playerName).toBe("cat");
+    expect(response.body.code).toBe("logged_out");
+  });
+  it("returns name session info when an existing logged in session ID is given", async () => {
+    const response = await request(app).get(
+      "/api/checkout_name_session?sessionID=logged_in_session"
+    );
+    expect(response.status).toBe(200);
+    expect(response.body.sessionID).toBe("logged_in_session");
+    expect(response.body.playerName).toBe("cat");
+    expect(response.body.code).toBe("logged_in");
+  });
+  it("returns unavailable session info when an nonexistent session ID is given", async () => {
+    const response = await request(app).get(
+      "/api/checkout_name_session?sessionID=nonexistent_session"
+    );
+    expect(response.status).toBe(200);
+    expect(response.body.sessionID).toBe("nonexistent_session");
+    expect(response.body.code).toBe("unavailable");
+  });
+  it("returns error when sessionID is not given", async () => {
+    const response = await request(app).get("/api/checkout_name_session");
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("sessionID is required");
   });
 });
 

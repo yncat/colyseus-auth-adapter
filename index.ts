@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import * as express from "express";
 import * as redis from "redis";
+import { promisify } from "util";
 
 export type middlewareFunction = (
   req: express.Request,
@@ -10,7 +11,19 @@ export type middlewareFunction = (
 export interface NameSession {
   sessionID: string;
   playerName: string;
+  isLoggingIn: boolean;
 }
+
+export interface NameSessionCheckoutResult {
+  sessionID: string;
+  playerName: string;
+  code: NameSessionCheckoutResultCode;
+}
+
+export type NameSessionCheckoutResultCode =
+  | "logged_out"
+  | "logged_in"
+  | "unavailable";
 
 export interface CommonErrorResponse {
   code: number;
@@ -31,7 +44,56 @@ export function newNameSession(rdc: redis.RedisClient): middlewareFunction {
     const ret: NameSession = {
       sessionID: sessionID,
       playerName: playerName as string,
+      isLoggingIn: false,
     };
+    res.json(ret);
+  };
+}
+
+export function checkoutNameSession(
+  rdc: redis.RedisClient
+): middlewareFunction {
+  return async (req, res) => {
+    if (!req.query.sessionID || req.query.sessionID === "") {
+      renderError(res, 400, "sessionID is required");
+      return;
+    }
+    const sessionID = req.query.sessionID as string;
+    const existsAsync = promisify(rdc.exists).bind(rdc);
+    let exists: number;
+    try {
+      exists = await existsAsync(sessionID);
+    } catch (e) {
+      renderError(res, 500, e.toString);
+      return;
+    }
+
+    if (exists === 0) {
+      const ret: NameSessionCheckoutResult = {
+        sessionID: sessionID,
+        playerName: "",
+        code: "unavailable",
+      };
+      res.json(ret);
+      return;
+    }
+
+    const getAsync = promisify(rdc.get).bind(rdc);
+    let ses: string;
+    try {
+      ses = await getAsync(sessionID);
+    } catch (e) {
+      renderError(res, 500, e.toString);
+      return;
+    }
+    const nameSession = JSON.parse(ses);
+
+    const ret: NameSessionCheckoutResult = {
+      sessionID: sessionID,
+      playerName: nameSession.playerName,
+      code: nameSession.isLoggingIn === true ? "logged_in" : "logged_out",
+    };
+
     res.json(ret);
   };
 }
