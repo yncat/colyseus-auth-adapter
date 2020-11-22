@@ -1,0 +1,49 @@
+{
+  "name": "colyseus-auth-adapter",
+  "version": "1.0.0",
+  "description": "Colyseus authorization adapters",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "build": "tsc"
+  },
+  "author": "Yukio Nozawa",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^26.0.15",
+    "@types/supertest": "^2.0.10",
+    "express": "^4.17.1",
+    "jest": "^26.6.3",
+    "prettier": "^2.2.0",
+    "redis-mock": "^0.54.0",
+    "supertest": "^6.0.1",
+    "ts-jest": "^26.4.4",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.1.2"
+  },
+  "dependencies": {
+    "@types/express": "^4.17.9",
+    "@types/node": "^14.14.9",
+    "@types/redis": "^2.8.28",
+    "@types/uuid": "^8.3.0",
+    "redis": "^3.0.2",
+    "uuid": "^8.3.1"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "globals": {
+      "ts-jest": {
+        "tsconfig": "tsconfig.json"
+      }
+    },
+    "testMatch": [
+      "**/tests/**/*.test.ts"
+    ]
+  }
+}
