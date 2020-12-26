@@ -8,12 +8,17 @@ export default class NameSessionRepository {
 		this.rdc = rdc;
 	}
 
-	public get(sessionID: string): Promise<NameSession> {
-		return new Promise<NameSession>((resolve, reject) => {
+	public get(sessionID: string): Promise<NameSession | null> {
+		return new Promise<NameSession | null>((resolve, reject) => {
 			let ses: string;
 			this.rdc.get(sessionID, (err, res) => {
 				if (err) {
 					reject(err);
+					return;
+				}
+				if(!res) {
+					resolve(null);
+					return;
 				}
 				const obj = JSON.parse(res);
 				const nameSession: NameSession = {
