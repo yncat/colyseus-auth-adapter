@@ -117,7 +117,7 @@ export function loginByNameSession(
     }
 
     if (exists === 0) {
-      renderError(res, 404, "NameSession not found. NameSession: "+sessionID)
+      renderError(res, 404, "NameSession not found. NameSession: " + sessionID)
       return;
     }
 
@@ -130,13 +130,13 @@ export function loginByNameSession(
       return;
     }
     const nameSession = JSON.parse(ses);
-    if(nameSession.isLoggedIn){
-      renderError(res, 403, "Name session already logged in. NameSession: "+ sessionID);
+    if (nameSession.isLoggedIn) {
+      renderError(res, 403, "Name session already logged in. NameSession: " + sessionID);
       return;
     }
 
-    nameSession.isLoggedIn=true;
-    rdc.set(sessionID,JSON.stringify(nameSession));
+    nameSession.isLoggedIn = true;
+    rdc.set(sessionID, JSON.stringify(nameSession));
     res.json({});
   };
 }
