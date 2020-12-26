@@ -1,13 +1,15 @@
 import * as express from "express";
 import * as redis from "redis-mock";
 import * as request from "supertest";
-import { newNameSession, checkoutNameSession } from "../index";
+import { promisify } from "util";
+import { newNameSession, checkoutNameSession, loginByNameSession } from "../index";
 
 const rdc = redis.createClient();
 
 const app = express();
 app.get("/api/new_name_session", newNameSession(rdc));
 app.get("/api/checkout_name_session", checkoutNameSession(rdc));
+app.get("/api/login_by_name_session", loginByNameSession(rdc));
 const server = app.listen(3001);
 
 describe("newNameSession", () => {
@@ -77,6 +79,32 @@ describe("checkoutNameSession", () => {
     const response = await request(app).get("/api/checkout_name_session");
     expect(response.status).toBe(400);
     expect(response.body.message).toBe("sessionID is required");
+  });
+});
+describe("loginByNameSession", () => {
+  beforeAll((done) => {
+    rdc.mset(
+      "logged_out_session",
+      JSON.stringify({ playerName: "cat", isLoggingIn: false }),
+      "logged_in_session",
+      JSON.stringify({ playerName: "cat", isLoggingIn: true }),
+      (err, res) => {
+        done();
+      }
+    );
+  });
+
+  it("changes session to logged in and returns a blank JSON response when a logged out session is given", async () => {
+    const response = await request(app).get(
+      "/api/login_by_name_session?sessionID=logged_out_session"
+    );
+    expect(response.status).toBe(200);
+
+    // check name session on redis
+    const getAsync = promisify(rdc.get).bind(rdc);
+    const ses = await getAsync("logged_out_session");
+    const nameSession = JSON.parse(ses);
+    expect(nameSession.isLoggingIn).toBe(true);
   });
 });
 
