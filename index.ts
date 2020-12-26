@@ -98,6 +98,44 @@ export function checkoutNameSession(
   };
 }
 
+export function loginByNameSession(
+  rdc: redis.RedisClient
+): middlewareFunction {
+  return async (req, res) => {
+    if (!req.query.sessionID || req.query.sessionID === "") {
+      renderError(res, 400, "sessionID is required");
+      return;
+    }
+    const sessionID = req.query.sessionID as string;
+    const existsAsync = promisify(rdc.exists).bind(rdc);
+    let exists: number;
+    try {
+      exists = await existsAsync(sessionID);
+    } catch (e) {
+      renderError(res, 500, e.toString);
+      return;
+    }
+
+    if (exists === 0) {
+      renderError(res, 404, "NameSession not found. NameSession: "+sessionID)
+      return;
+    }
+
+    const getAsync = promisify(rdc.get).bind(rdc);
+    let ses: string;
+    try {
+      ses = await getAsync(sessionID);
+    } catch (e) {
+      renderError(res, 500, e.toString);
+      return;
+    }
+    const nameSession = JSON.parse(ses);
+    nameSession.isLoggingIn=true;
+    rdc.set(sessionID,JSON.stringify(nameSession));
+    res.json({});
+  };
+}
+
 function renderError(
   res: express.Response,
   code: number,
