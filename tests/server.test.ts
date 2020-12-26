@@ -122,6 +122,12 @@ describe("loginByNameSession", () => {
     expect(response.status).toBe(404);
     expect(response.body.message).toBe("NameSession not found. NameSession: nonexistent_session");
   });
+
+  it("returns 500 when sessionID is not given", async () => {
+    const response = await request(app).get("/api/login_by_name_session");
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("sessionID is required");
+  });
 });
 
 afterAll(() => {
