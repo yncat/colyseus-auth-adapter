@@ -106,6 +106,14 @@ describe("loginByNameSession", () => {
     const nameSession = JSON.parse(ses);
     expect(nameSession.isLoggedIn).toBe(true);
   });
+
+  it("returns 403 when the given nameSession is already logged in", async () => {
+    const response = await request(app).get(
+      "/api/login_by_name_session?sessionID=logged_in_session"
+    );
+    expect(response.status).toBe(403);
+    expect(response.body.message).toBe("Name session already logged in. NameSession: logged_in_session");
+  });
 });
 
 afterAll(() => {

@@ -130,6 +130,11 @@ export function loginByNameSession(
       return;
     }
     const nameSession = JSON.parse(ses);
+    if(nameSession.isLoggedIn){
+      renderError(res, 403, "Name session already logged in. NameSession: "+ sessionID);
+      return;
+    }
+
     nameSession.isLoggedIn=true;
     rdc.set(sessionID,JSON.stringify(nameSession));
     res.json({});
