@@ -114,6 +114,14 @@ describe("loginByNameSession", () => {
     expect(response.status).toBe(403);
     expect(response.body.message).toBe("Name session already logged in. NameSession: logged_in_session");
   });
+
+  it("returns 404 when the given nameSession doesn't exist on redis", async () => {
+    const response = await request(app).get(
+      "/api/login_by_name_session?sessionID=nonexistent_session"
+    );
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe("NameSession not found. NameSession: nonexistent_session");
+  });
 });
 
 afterAll(() => {
