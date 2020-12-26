@@ -16,7 +16,7 @@ export default class NameSessionRepository {
 					reject(err);
 					return;
 				}
-				if(!res) {
+				if (!res) {
 					resolve(null);
 					return;
 				}
@@ -30,5 +30,22 @@ export default class NameSessionRepository {
 			});
 		});
 	}
+
+	public set(nameSession: NameSession): Promise<boolean> {
+		return new Promise<boolean>((resolve, reject) => {
+			const s = JSON.stringify({
+				playerName: nameSession.playerName,
+				isLoggedIn: nameSession.isLoggedIn,
+			});
+			this.rdc.set(nameSession.sessionID, s, (err, res) => {
+				if (err) {
+					reject(err);
+					return;
+				}
+				resolve(true);
+			});
+		});
+	}
+
 }
 
