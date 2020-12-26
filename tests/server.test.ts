@@ -20,7 +20,7 @@ describe("newNameSession", () => {
     expect(response.status).toBe(200);
     expect(/.+-.+-.+-.+/.test(response.body.sessionID)).toBe(true);
     expect(response.body.playerName).toBe("cat");
-    expect(response.body.isLoggingIn).toBe(false);
+    expect(response.body.isLoggedIn).toBe(false);
   });
   it("returns error when playerName is empty", async () => {
     const response = await request(app).get(
@@ -40,9 +40,9 @@ describe("checkoutNameSession", () => {
   beforeAll((done) => {
     rdc.mset(
       "logged_out_session",
-      JSON.stringify({ playerName: "cat", isLoggingIn: false }),
+      JSON.stringify({ playerName: "cat", isLoggedIn: false }),
       "logged_in_session",
-      JSON.stringify({ playerName: "cat", isLoggingIn: true }),
+      JSON.stringify({ playerName: "cat", isLoggedIn: true }),
       (err, res) => {
         done();
       }
@@ -85,9 +85,9 @@ describe("loginByNameSession", () => {
   beforeAll((done) => {
     rdc.mset(
       "logged_out_session",
-      JSON.stringify({ playerName: "cat", isLoggingIn: false }),
+      JSON.stringify({ playerName: "cat", isLoggedIn: false }),
       "logged_in_session",
-      JSON.stringify({ playerName: "cat", isLoggingIn: true }),
+      JSON.stringify({ playerName: "cat", isLoggedIn: true }),
       (err, res) => {
         done();
       }
@@ -104,7 +104,7 @@ describe("loginByNameSession", () => {
     const getAsync = promisify(rdc.get).bind(rdc);
     const ses = await getAsync("logged_out_session");
     const nameSession = JSON.parse(ses);
-    expect(nameSession.isLoggingIn).toBe(true);
+    expect(nameSession.isLoggedIn).toBe(true);
   });
 });
 

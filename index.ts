@@ -11,7 +11,7 @@ export type middlewareFunction = (
 export interface NameSession {
   sessionID: string;
   playerName: string;
-  isLoggingIn: boolean;
+  isLoggedIn: boolean;
 }
 
 export interface NameSessionCheckoutResult {
@@ -44,7 +44,7 @@ export function newNameSession(rdc: redis.RedisClient): middlewareFunction {
     const ret: NameSession = {
       sessionID: sessionID,
       playerName: playerName as string,
-      isLoggingIn: false,
+      isLoggedIn: false,
     };
     res.json(ret);
   };
@@ -91,7 +91,7 @@ export function checkoutNameSession(
     const ret: NameSessionCheckoutResult = {
       sessionID: sessionID,
       playerName: nameSession.playerName,
-      code: nameSession.isLoggingIn === true ? "logged_in" : "logged_out",
+      code: nameSession.isLoggedIn === true ? "logged_in" : "logged_out",
     };
 
     res.json(ret);
@@ -130,7 +130,7 @@ export function loginByNameSession(
       return;
     }
     const nameSession = JSON.parse(ses);
-    nameSession.isLoggingIn=true;
+    nameSession.isLoggedIn=true;
     rdc.set(sessionID,JSON.stringify(nameSession));
     res.json({});
   };
