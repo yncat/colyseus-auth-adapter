@@ -1,18 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
 import * as express from "express";
-import * as redis from "redis";
-import { promisify } from "util";
+import NameSession from "./nameSession";
+import NameSessionRepository from "./nameSessionRepository";
 
 export type middlewareFunction = (
   req: express.Request,
   res: express.Response
 ) => void;
-
-export interface NameSession {
-  sessionID: string;
-  playerName: string;
-  isLoggedIn: boolean;
-}
 
 export interface NameSessionCheckoutResult {
   sessionID: string;
@@ -30,9 +24,8 @@ export interface CommonErrorResponse {
   message: string;
 }
 
-export const SESSION_TTL = 60 * 60 * 24 * 7; // 1 week
 
-export function newNameSession(rdc: redis.RedisClient): middlewareFunction {
+export function newNameSession(repo: NameSessionRepository): middlewareFunction {
   return (req, res) => {
     const playerName = req.query.playerName;
     if (!playerName || playerName === "") {
@@ -40,18 +33,18 @@ export function newNameSession(rdc: redis.RedisClient): middlewareFunction {
       return;
     }
     const sessionID: string = uuidv4();
-    rdc.set(sessionID, playerName as string, "EX", SESSION_TTL);
-    const ret: NameSession = {
+    const nameSession: NameSession = {
       sessionID: sessionID,
       playerName: playerName as string,
       isLoggedIn: false,
     };
-    res.json(ret);
+    repo.set(nameSession);
+    res.json(nameSession);
   };
 }
 
 export function checkoutNameSession(
-  rdc: redis.RedisClient
+  repo: NameSessionRepository
 ): middlewareFunction {
   return async (req, res) => {
     if (!req.query.sessionID || req.query.sessionID === "") {
@@ -59,16 +52,15 @@ export function checkoutNameSession(
       return;
     }
     const sessionID = req.query.sessionID as string;
-    const existsAsync = promisify(rdc.exists).bind(rdc);
-    let exists: number;
+    let nameSession: NameSession;
     try {
-      exists = await existsAsync(sessionID);
+      nameSession = await repo.get(sessionID);
     } catch (e) {
       renderError(res, 500, e.toString);
       return;
     }
 
-    if (exists === 0) {
+    if (nameSession === null) {
       const ret: NameSessionCheckoutResult = {
         sessionID: sessionID,
         playerName: "",
@@ -77,16 +69,6 @@ export function checkoutNameSession(
       res.json(ret);
       return;
     }
-
-    const getAsync = promisify(rdc.get).bind(rdc);
-    let ses: string;
-    try {
-      ses = await getAsync(sessionID);
-    } catch (e) {
-      renderError(res, 500, e.toString);
-      return;
-    }
-    const nameSession = JSON.parse(ses);
 
     const ret: NameSessionCheckoutResult = {
       sessionID: sessionID,
@@ -99,7 +81,7 @@ export function checkoutNameSession(
 }
 
 export function loginByNameSession(
-  rdc: redis.RedisClient
+  repo: NameSessionRepository
 ): middlewareFunction {
   return async (req, res) => {
     if (!req.query.sessionID || req.query.sessionID === "") {
@@ -107,36 +89,26 @@ export function loginByNameSession(
       return;
     }
     const sessionID = req.query.sessionID as string;
-    const existsAsync = promisify(rdc.exists).bind(rdc);
-    let exists: number;
+    let nameSession: NameSession;
     try {
-      exists = await existsAsync(sessionID);
+      nameSession = await repo.get(sessionID);
     } catch (e) {
       renderError(res, 500, e.toString);
       return;
     }
 
-    if (exists === 0) {
+    if (nameSession === null) {
       renderError(res, 404, "NameSession not found. NameSession: " + sessionID)
       return;
     }
 
-    const getAsync = promisify(rdc.get).bind(rdc);
-    let ses: string;
-    try {
-      ses = await getAsync(sessionID);
-    } catch (e) {
-      renderError(res, 500, e.toString);
-      return;
-    }
-    const nameSession = JSON.parse(ses);
     if (nameSession.isLoggedIn) {
       renderError(res, 403, "Name session already logged in. NameSession: " + sessionID);
       return;
     }
 
     nameSession.isLoggedIn = true;
-    rdc.set(sessionID, JSON.stringify(nameSession));
+    repo.set(nameSession);
     res.json({});
   };
 }

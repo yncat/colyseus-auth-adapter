@@ -3,13 +3,15 @@ import * as redis from "redis-mock";
 import * as request from "supertest";
 import { promisify } from "util";
 import { newNameSession, checkoutNameSession, loginByNameSession } from "../index";
+import NameSessionRepository from "../nameSessionRepository";
 
 const rdc = redis.createClient();
+const repo = new NameSessionRepository(rdc);
 
 const app = express();
-app.get("/api/new_name_session", newNameSession(rdc));
-app.get("/api/checkout_name_session", checkoutNameSession(rdc));
-app.get("/api/login_by_name_session", loginByNameSession(rdc));
+app.get("/api/new_name_session", newNameSession(repo));
+app.get("/api/checkout_name_session", checkoutNameSession(repo));
+app.get("/api/login_by_name_session", loginByNameSession(repo));
 const server = app.listen(3001);
 
 describe("newNameSession", () => {

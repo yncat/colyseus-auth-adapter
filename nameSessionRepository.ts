@@ -1,6 +1,8 @@
 import * as redis from "redis";
 import NameSession from "./NameSession";
 
+const SESSION_TTL = 60 * 60 * 24 * 7; // 1 week
+
 export default class NameSessionRepository {
 	rdc: redis.RedisClient;
 
@@ -37,7 +39,7 @@ export default class NameSessionRepository {
 				playerName: nameSession.playerName,
 				isLoggedIn: nameSession.isLoggedIn,
 			});
-			this.rdc.set(nameSession.sessionID, s, (err, res) => {
+			this.rdc.set(nameSession.sessionID, s, "EX", SESSION_TTL, (err, res) => {
 				if (err) {
 					reject(err);
 					return;
