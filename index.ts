@@ -26,7 +26,7 @@ export interface CommonErrorResponse {
 
 
 export function newNameSession(repo: NameSessionRepository): middlewareFunction {
-  return (req, res) => {
+  return async (req, res) => {
     const playerName = req.query.playerName;
     if (!playerName || playerName === "") {
       renderError(res, 400, "playerName is required");
@@ -38,7 +38,12 @@ export function newNameSession(repo: NameSessionRepository): middlewareFunction 
       playerName: playerName as string,
       isLoggedIn: false,
     };
-    repo.set(nameSession);
+    try{
+      await repo.set(nameSession);
+    }catch(e){
+      renderError(res,500,e.toString());
+      return;
+    }
     res.json(nameSession);
   };
 }
@@ -108,7 +113,12 @@ export function loginByNameSession(
     }
 
     nameSession.isLoggedIn = true;
-    repo.set(nameSession);
+    try{
+      const ret = repo.set(nameSession);
+    }catch(e){
+      renderError(res, 500, e.toString);
+      return;
+    }
     res.json({});
   };
 }
