@@ -11,7 +11,7 @@ class MalfunctioningRedisClient {
 		}
 		return true;
 	}
-	public set(key: string, value: string, cb?: Callback<string>): boolean {
+	public set(key: string, value: string, option: string, optval: string, cb?: Callback<string>): boolean {
 		if (cb) {
 			cb(new Error("error"), null);
 		}
@@ -52,14 +52,14 @@ describe("get", () => {
 
 	it("rejects when redis operation fails", async () => {
 		const repo = new NameSessionRepository(mrdc);
-		expect(repo.get("t		est_session")).rejects.toMatchObject(new Error("error"));
+		expect(repo.get("test_session")).rejects.toMatchObject(new Error("error"));
 	});
 });
 
 describe("set", () => {
 	beforeAll((done) => {
 		rdc.mset(
-			"t		est_session",
+			"test_session",
 			JSON.stringify({ playerName: "cat", isLoggedIn: true }),
 			(err, res) => {
 				done();
