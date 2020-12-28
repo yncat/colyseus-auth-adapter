@@ -38,10 +38,10 @@ export function newNameSession(repo: NameSessionRepository): middlewareFunction 
       playerName: playerName as string,
       isLoggedIn: false,
     };
-    try{
+    try {
       await repo.set(nameSession);
-    }catch(e){
-      renderError(res,500,e.toString());
+    } catch (e) {
+      renderError(res, 500, e.toString());
       return;
     }
     res.json(nameSession);
@@ -113,15 +113,54 @@ export function loginByNameSession(
     }
 
     nameSession.isLoggedIn = true;
-    try{
+    try {
       const ret = repo.set(nameSession);
-    }catch(e){
+    } catch (e) {
       renderError(res, 500, e.toString);
       return;
     }
     res.json({});
   };
 }
+
+export function logoutByNameSession(
+  repo: NameSessionRepository
+): middlewareFunction {
+  return async (req, res) => {
+    if (!req.query.sessionID || req.query.sessionID === "") {
+      renderError(res, 400, "sessionID is required");
+      return;
+    }
+    const sessionID = req.query.sessionID as string;
+    let nameSession: NameSession;
+    try {
+      nameSession = await repo.get(sessionID);
+    } catch (e) {
+      renderError(res, 500, e.toString);
+      return;
+    }
+
+    if (nameSession === null) {
+      renderError(res, 404, "NameSession not found. NameSession: " + sessionID)
+      return;
+    }
+
+    if (!nameSession.isLoggedIn) {
+      renderError(res, 403, "Name session already logged out. NameSession: " + sessionID);
+      return;
+    }
+
+    nameSession.isLoggedIn = false;
+    try {
+      const ret = repo.set(nameSession);
+    } catch (e) {
+      renderError(res, 500, e.toString);
+      return;
+    }
+    res.json({});
+  };
+}
+
 
 function renderError(
   res: express.Response,
